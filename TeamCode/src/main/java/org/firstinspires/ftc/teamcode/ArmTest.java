@@ -9,6 +9,7 @@ import com.acmerobotics.roadrunner.Pose2d;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -29,33 +30,44 @@ public class ArmTest extends OpMode {
     ServoImplEx servoRight;
     ServoImplEx servoLeft;
 
-    
+    CRServo intakeRightServo;
+    CRServo intakeLeftServo;
 
     private static final double SERVO_INSIDE = 0.95;
     private static final double SERVO_HOOK = 0.55;
     private static final double SERVO_FLOOR = 0.33;
 
 
-    private double servoTarget = 0.95;
 
     @Override
     public void init() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-         servoLeft = hardwareMap.get(ServoImplEx.class, "servoWristLeft");
-         servoRight = hardwareMap.get(ServoImplEx.class, "servoWristRight");
+        servoLeft = hardwareMap.get(ServoImplEx.class, "servoWristLeft");
+        servoRight = hardwareMap.get(ServoImplEx.class, "servoWristRight");
+
+        intakeLeftServo = hardwareMap.get(CRServo.class, "servoIntakeLeft");
+        intakeRightServo = hardwareMap.get(CRServo.class, "servoIntakeRight");
 
          servoLeft.setDirection(Servo.Direction.REVERSE);
 
         servoLeft.setPwmEnable();
         servoRight.setPwmEnable();
+
+        intakeLeftServo.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
     @Override
     public void loop() {
         TelemetryPacket packet = new TelemetryPacket();
 
-
+        if (gamepad1.right_bumper) {
+            PARAMS.intake_pwr = 1.0;
+        } else if (gamepad1.left_bumper) {
+            PARAMS.intake_pwr = -1.0;
+        } else {
+            PARAMS.intake_pwr = 0.0;
+        }
 
         if (gamepad1.x) {
             PARAMS.goal = SERVO_INSIDE;
@@ -68,6 +80,9 @@ public class ArmTest extends OpMode {
         servoLeft.setPosition(PARAMS.goal);
         servoRight.setPosition(PARAMS.goal);
 
+        intakeLeftServo.setPower(PARAMS.intake_pwr);
+        intakeRightServo.setPower(PARAMS.intake_pwr);
+
         packet.put("left_servo", servoLeft.getPosition());
         packet.put("right_servo", servoRight.getPosition());
 
@@ -77,6 +92,8 @@ public class ArmTest extends OpMode {
     public static class Params {
         // https://docs.wpilib.org/en/stable/docs/software/advanced-controls/introduction/introduction-to-feedforward.html#elevator-feedforward
         public double goal = 0.1;
+
+        public double intake_pwr = 0.0;
     }
 
 }
