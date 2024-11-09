@@ -30,12 +30,23 @@ public class ArmTest extends OpMode {
     ServoImplEx servoRight;
     ServoImplEx servoLeft;
 
+    ServoImplEx servoSlideRight;
+    ServoImplEx servoSlideLeft;
+
     CRServo intakeRightServo;
     CRServo intakeLeftServo;
 
     private static final double SERVO_INSIDE = 0.95;
     private static final double SERVO_HOOK = 0.55;
     private static final double SERVO_FLOOR = 0.33;
+
+    private static final double SLIDE_OUT = 0.615;
+    private static final double SLIDE_IN = 0.45;
+
+    private double slidePos = SLIDE_IN;
+
+
+
 
 
 
@@ -49,12 +60,30 @@ public class ArmTest extends OpMode {
         intakeLeftServo = hardwareMap.get(CRServo.class, "servoIntakeLeft");
         intakeRightServo = hardwareMap.get(CRServo.class, "servoIntakeRight");
 
+        servoSlideRight = hardwareMap.get(ServoImplEx.class, "servoSlideRight");
+        servoSlideLeft = hardwareMap.get(ServoImplEx.class, "servoSlideLeft");
+
          servoLeft.setDirection(Servo.Direction.REVERSE);
 
         servoLeft.setPwmEnable();
         servoRight.setPwmEnable();
 
+        servoSlideLeft.setPwmEnable();
+        servoSlideRight.setPwmEnable();
+
         intakeLeftServo.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        servoSlideLeft.setDirection(Servo.Direction.REVERSE);
+
+        servoSlideLeft.setPosition(PARAMS.slide_goal);
+        servoSlideRight.setPosition(PARAMS.slide_goal);
+
+
+        servoLeft.setPosition(PARAMS.goal);
+        servoRight.setPosition(PARAMS.goal);
+
+        intakeLeftServo.setPower(PARAMS.intake_pwr);
+        intakeRightServo.setPower(PARAMS.intake_pwr);
     }
 
     @Override
@@ -77,6 +106,13 @@ public class ArmTest extends OpMode {
             PARAMS.goal = SERVO_FLOOR;
         }
 
+        PARAMS.slide_goal = Math.min(Math.max(PARAMS.slide_goal + gamepad1.right_trigger*PARAMS.slide_speed_factor, SLIDE_IN), SLIDE_OUT);
+        PARAMS.slide_goal = Math.min(Math.max(PARAMS.slide_goal - gamepad1.left_trigger*PARAMS.slide_speed_factor, SLIDE_IN), SLIDE_OUT);
+
+        servoSlideLeft.setPosition(PARAMS.slide_goal);
+        servoSlideRight.setPosition(PARAMS.slide_goal);
+
+
         servoLeft.setPosition(PARAMS.goal);
         servoRight.setPosition(PARAMS.goal);
 
@@ -91,8 +127,10 @@ public class ArmTest extends OpMode {
 
     public static class Params {
         // https://docs.wpilib.org/en/stable/docs/software/advanced-controls/introduction/introduction-to-feedforward.html#elevator-feedforward
-        public double goal = 0.1;
+        public double goal = SERVO_FLOOR;
 
+        public double slide_speed_factor = 0.01;
+        public double slide_goal = 0.5;
         public double intake_pwr = 0.0;
     }
 
