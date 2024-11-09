@@ -119,5 +119,6 @@ public class Elevator {
         // Elevator height constants (in units of encoder ticks)
         public double encoderMinimum = 0.0;
         public double encoderMaximum = 0.0;
+        public float controlConst;
     }
 }
