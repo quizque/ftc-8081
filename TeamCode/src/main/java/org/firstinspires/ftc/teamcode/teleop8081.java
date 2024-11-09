@@ -16,12 +16,14 @@ public class teleop8081 extends OpMode {
     private FtcDashboard dash = FtcDashboard.getInstance();
     private List<Action> runningActions = new ArrayList<>();
     private MecanumDrive mecanumDrive;
+    private Elevator elevator;
 
     @Override
     public void init() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         mecanumDrive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
+        elevator = new Elevator(hardwareMap);
     }
 
     @Override
@@ -30,9 +32,11 @@ public class teleop8081 extends OpMode {
 
         // Update pose estimator
         mecanumDrive.updatePoseEstimate();
+        elevator.update(packet);
 
         // Add driving via controller to the actions list
-        runningActions.add(mecanumDrive.controllerDrive());
+        runningActions.add(mecanumDrive.controllerDriveAction(gamepad1));
+        runningActions.add(elevator.controllerDriveElevator(gamepad1));
 
 
 

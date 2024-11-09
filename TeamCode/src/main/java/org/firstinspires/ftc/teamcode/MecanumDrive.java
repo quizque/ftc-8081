@@ -46,6 +46,7 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
@@ -492,7 +493,13 @@ public final class MecanumDrive {
         return Math.abs(raw) < deadband ? 0 : Math.signum(raw) * (Math.abs(raw) - deadband) / (1 - deadband);
     }
 
-    public class DriveAction implements Action {
+    public class ControllerDriveAction implements Action {
+
+        Gamepad gamepad;
+
+        public ControllerDriveAction(Gamepad gamepad) {
+            this.gamepad = gamepad;
+        }
 
         @Override
         public boolean run(@NonNull TelemetryPacket packet) {
@@ -504,15 +511,15 @@ public final class MecanumDrive {
 
             // Get translation power
             Vector2d dir = new Vector2d(
-                    -gamepad1.left_stick_y,
-                    -gamepad1.left_stick_x
+                    -gamepad.left_stick_y,
+                    -gamepad.left_stick_x
             );
 
             // Get rotation power
-            float rotation_in = -gamepad1.right_stick_y;
+            float rotation_in = -gamepad.right_stick_x;
 
             // Convert the translation power to a magnitude and angle
-            double mag = linearDeadband(dir.norm(), 0.05);
+            double mag = linearDeadband(dir.norm(), 0.03);
             Rotation2d ang = dir.angleCast();
 
             // Apply a square curve to the translation power
@@ -525,7 +532,7 @@ public final class MecanumDrive {
             );
 
             // Apply square curve to the rotation power
-            double rotation_power = Math.pow(linearDeadband(rotation_in, 0.05), 2);
+            double rotation_power = Math.pow(linearDeadband(rotation_in, 0.03), 2) * Math.signum(rotation_in);
 
             // Generate the final translation/rotation variable
             PoseVelocity2d mechDrivePower = new PoseVelocity2d(translationPower, rotation_power);
@@ -540,7 +547,7 @@ public final class MecanumDrive {
         }
     }
 
-    public Action driveAction() {
-        return new DriveAction();
+    public Action controllerDriveAction(Gamepad gamepad) {
+        return new ControllerDriveAction(gamepad);
     }
 }

@@ -1,36 +1,41 @@
 package org.firstinspires.ftc.teamcode;
 
-import androidx.annotation.NonNull;
-
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
-import com.acmerobotics.roadrunner.PoseVelocity2d;
-import com.acmerobotics.roadrunner.Rotation2d;
-import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.Pose2d;
 import com.arcrobotics.ftclib.controller.PIDController;
-import com.arcrobotics.ftclib.controller.PIDFController;
-import com.arcrobotics.ftclib.hardware.motors.Motor;
-import com.arcrobotics.ftclib.hardware.motors.MotorGroup;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
+import java.util.ArrayList;
+import java.util.List;
+
+@TeleOp(name = "Elevator Test")
 @Config
-public class Elevator {
+public class ElevatorTest extends OpMode {
+
     public static Elevator.Params PARAMS = new Elevator.Params();
-    private final DcMotorEx elevatorLeft, elevatorRight;
+    private FtcDashboard dash = FtcDashboard.getInstance();
+
+    private DcMotorEx elevatorLeft;
+    private DcMotorEx elevatorRight;
+    private Elevator elevator;
 
     PIDController pidLeft;
     PIDController pidRight;
 
-    private double targetHeight;
+    private double targetHeight = 0.0;
 
+    @Override
+    public void init() {
+        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-    public Elevator(HardwareMap hardwareMap) {
         elevatorLeft = hardwareMap.get(DcMotorEx.class, "elevatorLeft");
         elevatorRight = hardwareMap.get(DcMotorEx.class, "elevatorRight");
 
@@ -53,7 +58,17 @@ public class Elevator {
 
     }
 
-    public void update(TelemetryPacket packet) {
+    @Override
+    public void loop() {
+        TelemetryPacket packet = new TelemetryPacket();
+
+        targetHeight += gamepad1.right_trigger * 0.2;
+        targetHeight -= gamepad1.left_trigger * 0.2;
+
+//            elevatorLeft.setPower(gamepad.right_trigger + PARAMS.kG);
+//            elevatorRight.setPower(gamepad.right_trigger + PARAMS.kG);
+
+        targetHeight = Math.min(Math.max(PARAMS.encoderMinimum, targetHeight), PARAMS.encoderMaximum);
 
         pidLeft.setP(PARAMS.kP);
         pidLeft.setI(PARAMS.kI);
@@ -66,45 +81,16 @@ public class Elevator {
         // Drive motors
         double l = pidLeft.calculate(elevatorLeft.getCurrentPosition(), targetHeight) + PARAMS.kG;
         double r = pidRight.calculate(elevatorRight.getCurrentPosition(), targetHeight) + PARAMS.kG;
+
         packet.put("pid_left", l);
         packet.put("pid_right", r);
+        packet.put("encoder_left", elevatorLeft.getCurrentPosition());
+        packet.put("encoder_right", elevatorRight.getCurrentPosition());
+        packet.put("elevator-target", targetHeight);
         elevatorLeft.setPower(l);
         elevatorRight.setPower(r);
-    }
 
-    public class ControllerDriveElevator implements Action {
-
-        Gamepad gamepad;
-
-        public ControllerDriveElevator(Gamepad gamepad) {
-            this.gamepad = gamepad;
-        }
-
-        @Override
-        public boolean run(@NonNull TelemetryPacket packet) {
-
-
-            targetHeight += (float) (gamepad.right_trigger * 0.2);
-            targetHeight -= (float) (gamepad.left_trigger * 0.2);
-
-//            elevatorLeft.setPower(gamepad.right_trigger + PARAMS.kG);
-//            elevatorRight.setPower(gamepad.right_trigger + PARAMS.kG);
-
-            targetHeight = Math.min(Math.max(PARAMS.encoderMinimum, targetHeight), PARAMS.encoderMaximum);
-
-
-            packet.put("target_height", targetHeight);
-            packet.put("elevator_power", gamepad.right_trigger);
-            packet.put("left_encoder", elevatorLeft.getCurrentPosition());
-            packet.put("right_encoder", elevatorRight.getCurrentPosition());
-//            packet.put("angle_power", rotation_power);
-
-            return true;
-        }
-    }
-
-    public Action controllerDriveElevator(Gamepad gamepad) {
-        return new Elevator.ControllerDriveElevator(gamepad);
+        dash.sendTelemetryPacket(packet);
     }
 
     public static class Params {
@@ -120,4 +106,5 @@ public class Elevator {
         public double encoderMinimum = 0.0;
         public double encoderMaximum = 0.0;
     }
+
 }
