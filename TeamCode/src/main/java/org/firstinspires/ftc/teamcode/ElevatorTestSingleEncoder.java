@@ -15,7 +15,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 @Config
 public class ElevatorTestSingleEncoder extends OpMode {
 
-    public static ElevatorTestSingleEncoder.Params PARAMS = new ElevatorTestSingleEncoder.Params();
+    public static ElevatorTest.Params PARAMS = new ElevatorTest.Params();
     private FtcDashboard dash = FtcDashboard.getInstance();
 
     private DcMotorEx elevatorLeft;
@@ -26,6 +26,9 @@ public class ElevatorTestSingleEncoder extends OpMode {
     PIDController pidRight;
 
     private double targetHeight = 0.0;
+    private double targetHeightSmooted = 0.0;
+
+    private TrapezoidalMotionProfile tProfile = new TrapezoidalMotionProfile(0.0, 0.0, 0.0, 0.0);
 
     @Override
     public void init() {
@@ -35,8 +38,8 @@ public class ElevatorTestSingleEncoder extends OpMode {
         elevatorRight = hardwareMap.get(DcMotorEx.class, "elevatorRight");
 
         // Set idle behavior
-//        elevatorLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        elevatorRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        elevatorLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        elevatorRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Reverse motor direction
         elevatorLeft.setDirection(DcMotorSimple.Direction.REVERSE);
@@ -45,68 +48,44 @@ public class ElevatorTestSingleEncoder extends OpMode {
         elevatorLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         elevatorRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-            elevatorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        elevatorRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        elevatorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        elevatorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         pidLeft = new PIDController(PARAMS.kP, PARAMS.kI, PARAMS.kD);
         pidRight = new PIDController(PARAMS.kP, PARAMS.kI, PARAMS.kD);
 
     }
 
+    long timestamp = System.currentTimeMillis() / 1000;
+    double currPos = 0.0;
+
     @Override
     public void loop() {
         TelemetryPacket packet = new TelemetryPacket();
 
-//        targetHeight += ;
-//        targetHeight -= ;
-
-            elevatorLeft.setPower(gamepad1.right_trigger * PARAMS.contC - gamepad1.left_trigger * PARAMS.contC);
-            elevatorRight.setPower(gamepad1.right_trigger * PARAMS.contC - gamepad1.left_trigger * PARAMS.contC);
-
-        targetHeight = Math.min(Math.max(PARAMS.encoderMinimum, targetHeight), PARAMS.encoderMaximum);
-
-        pidLeft.setP(PARAMS.kP);
-        pidLeft.setI(PARAMS.kI);
-        pidLeft.setD(PARAMS.kD);
-
-        pidRight.setP(PARAMS.kP);
-        pidRight.setI(PARAMS.kI);
-        pidRight.setD(PARAMS.kD);
-
-        // Drive motors
-//        double l = pidLeft.calculate(elevatorLeft.getCurrentPosition(), targetHeight) + PARAMS.kG;
-        double r = pidRight.calculate(elevatorRight.getCurrentPosition(), targetHeight) + PARAMS.kG;
-
-
-
-//        packet.put("pid_left", l);
-        packet.put("pid_right", r);
-        packet.put("encoder_left", elevatorLeft.getCurrentPosition());
-        packet.put("encoder_right", elevatorRight.getCurrentPosition());
-        packet.put("elevator-target", targetHeight);
-//        elevatorLeft.setPower(r);
-//        elevatorRight.setPower(r);
+        elevatorLeft.setPower(gamepad1.left_stick_y);
+        elevatorRight.setPower(gamepad1.left_stick_y);
 
         dash.sendTelemetryPacket(packet);
     }
 
     public static class Params {
         // https://docs.wpilib.org/en/stable/docs/software/advanced-controls/introduction/introduction-to-feedforward.html#elevator-feedforward
-        public double kG = 0.0;
+        public double kG = 0.1;
 
         // Normal PID constants
-        public double kP = 0.0;
+        public double kP = 0.005;
         public double kI = 0.0;
-        public double kD = 0.0;
+        public double kD = 0.0001;
 
-        public double maxSpeed = 0.5;
-        public  double minSpeed = 0.1;
 
-        public double contC = 0.5;
+
+        public double maxSpeed = 1.0;
+        public double minSpeed = -0.3;
 
         // Elevator height constants (in units of encoder ticks)
         public double encoderMinimum = 0.0;
-        public double encoderMaximum = 0.0;
+        public double encoderMaximum = 4000.0;
     }
 
 }
