@@ -32,11 +32,11 @@ public class teleop8081 extends OpMode {
 
         // Update pose estimator
         mecanumDrive.updatePoseEstimate();
-        elevator.update(packet);
+//        elevator.update(packet);
 
         // Add driving via controller to the actions list
         runningActions.add(mecanumDrive.controllerDriveAction(gamepad1));
-        runningActions.add(elevator.controllerDriveElevator(gamepad1));
+//        runningActions.add(elevator.controllerDriveElevator(gamepad1));
 
 
 
