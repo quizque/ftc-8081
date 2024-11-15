@@ -8,6 +8,7 @@ import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.arcrobotics.ftclib.controller.PIDFController;
+import com.arcrobotics.ftclib.util.Timing;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -16,6 +17,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimerTask;
 
 @TeleOp(name = "Elevator Test")
 @Config
@@ -31,6 +33,8 @@ public class ElevatorTest extends OpMode {
     PIDFController pidRight;
 
     private double targetHeight = 0.0;
+
+    private Timing.Timer resetEncoderTimer;
 
     @Override
     public void init() {
@@ -53,11 +57,11 @@ public class ElevatorTest extends OpMode {
         elevatorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         elevatorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        pidLeft = new PIDFController(PARAMS.kP, PARAMS.kI, PARAMS.kD, PARAMS.kG);
-        pidRight = new PIDFController(PARAMS.kP, PARAMS.kI, PARAMS.kD, PARAMS.kG);
-    }
+        pidLeft = new PIDController(PARAMS.kP, PARAMS.kI, PARAMS.kD);
+        pidRight = new PIDController(PARAMS.kP, PARAMS.kI, PARAMS.kD);
 
-    long timestamp = System.currentTimeMillis() / 1000;
+        resetEncoderTimer = new Timing.Timer(3);
+    }
 
     @Override
     public void loop() {
@@ -65,41 +69,59 @@ public class ElevatorTest extends OpMode {
 
         if (gamepad1.a) {
             targetHeight = 0;
-            timestamp = System.currentTimeMillis() / 1000;
         } else if (gamepad1.b) {
             targetHeight = 1000;
-                    timestamp = System.currentTimeMillis() / 1000;
         }else if (gamepad1.x) {
             targetHeight = 2500;
-                    timestamp = System.currentTimeMillis() / 1000;
         }else if (gamepad1.y) {
             targetHeight = 4000;
-                    timestamp = System.currentTimeMillis() / 1000;
         }
 
         targetHeight = Math.min(Math.max(PARAMS.encoderMinimum, targetHeight), PARAMS.encoderMaximum);
         pidLeft.setP(PARAMS.kP);
         pidLeft.setI(PARAMS.kI);
         pidLeft.setD(PARAMS.kD);
-        pidLeft.setF(PARAMS.kG);
 
         pidRight.setP(PARAMS.kP);
         pidRight.setI(PARAMS.kI);
         pidRight.setD(PARAMS.kD);
-        pidRight.setF(PARAMS.kG);
 
         // Drive motors
-        double l = pidLeft.calculate(elevatorLeft.getCurrentPosition(), targetHeight);
-        double r = pidRight.calculate(elevatorRight.getCurrentPosition(), targetHeight) ;
+        double l = pidLeft.calculate(elevatorLeft.getCurrentPosition(), targetHeight) + PARAMS.kG;
+        double r = pidRight.calculate(elevatorRight.getCurrentPosition(), targetHeight) + PARAMS.kG;
 
         l = Math.min(Math.max(PARAMS.minSpeed, l), PARAMS.maxSpeed);
         r = Math.min(Math.max(PARAMS.minSpeed, r), PARAMS.maxSpeed);
+
+        if (targetHeight == 0.0 && elevatorLeft.getCurrentPosition() <= 100 && elevatorRight.getCurrentPosition() <= 100) {
+            l = 0;
+            r = 0;
+
+            if (!resetEncoderTimer.isTimerOn()) {
+                resetEncoderTimer.start();
+
+            }
+
+            if (resetEncoderTimer.done()) {
+                elevatorLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                elevatorRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+                elevatorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                elevatorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+                resetEncoderTimer.pause();
+            }
+        } else {
+            resetEncoderTimer.pause();
+        }
 
         packet.put("pid_left", l);
         packet.put("pid_right", r);
         packet.put("encoder_left", elevatorLeft.getCurrentPosition());
         packet.put("encoder_right", elevatorRight.getCurrentPosition());
         packet.put("elevator-target", targetHeight);
+        packet.put("reset_timer", resetEncoderTimer.remainingTime());
+
         elevatorLeft.setPower(l);
         elevatorRight.setPower(r);
 
