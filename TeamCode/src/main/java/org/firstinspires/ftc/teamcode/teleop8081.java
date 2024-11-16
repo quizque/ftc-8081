@@ -53,7 +53,7 @@ public class teleop8081 extends OpMode {
         long dt = System.currentTimeMillis() - prev_time;
         prev_time = System.currentTimeMillis();
 
-        grabber.intakeSetPower(linearDeadband(gamepad1.right_trigger, 0.1) + (gamepad1.right_bumper ? 1.0 : 0.0) * 0.5  - linearDeadband(gamepad1.left_trigger, 0.1));
+        grabber.intakeSetPower(linearDeadband(gamepad1.right_trigger, 0.1) - (gamepad1.right_bumper ? 1.0 : 0.0) * 0.5  - linearDeadband(gamepad1.left_trigger, 0.1));
 
         if (gamepad1.a) {
             grabber.armToFloor();
