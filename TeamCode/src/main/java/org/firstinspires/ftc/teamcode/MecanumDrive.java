@@ -196,13 +196,13 @@ public final class MecanumDrive {
 
         // drive model parameters
         public double inPerTick = 0.000747324701636;
-        public double lateralInPerTick = 0.0005669197731532155;
-        public double trackWidthTicks = 16804.77333403068;
+        public double lateralInPerTick = 0.0005650938420198015;
+        public double trackWidthTicks = 16978.048779582874;
 
         // feedforward parameters (in tick units)
-        public double kS = 1.25;//1.3316720229166634;
-        public double kV = 0.00011;//0.00013938140534052785;
-        public double kA = 0.00004;
+        public double kS = 1.0126808250652674;
+        public double kV = 0.00012874864720419657;
+        public double kA = 0.000026;
 
         // path profile parameters (in inches)
         public double maxWheelVel = 50;
@@ -214,13 +214,13 @@ public final class MecanumDrive {
         public double maxAngAccel = Math.PI;
 
         // path controller gains
-        public double axialGain = 18.0;
-        public double lateralGain = 20.0;
-        public double headingGain = 18.0; // shared with turn
+        public double axialGain = 1.6;
+        public double lateralGain = 6.0;
+        public double headingGain = 5.0; // shared with turn
 
-        public double axialVelGain = 1.5;
-        public double lateralVelGain = 0.5;
-        public double headingVelGain = 0.5; // shared with turn
+        public double axialVelGain = 0.05;
+        public double lateralVelGain = 0.01;
+        public double headingVelGain = 0.01; // shared with turn
     }
 
     public class DriveLocalizer implements Localizer {
@@ -337,7 +337,7 @@ public final class MecanumDrive {
                 t = Actions.now() - beginTs;
             }
 
-            if (t >= timeTrajectory.duration) {
+            if (t >= timeTrajectory.duration + 1.5) {
                 leftFront.setPower(0);
                 leftBack.setPower(0);
                 rightBack.setPower(0);
@@ -429,7 +429,7 @@ public final class MecanumDrive {
                 t = Actions.now() - beginTs;
             }
 
-            if (t >= turn.duration) {
+            if (t >= turn.duration + 1.5) {
                 leftFront.setPower(0);
                 leftBack.setPower(0);
                 rightBack.setPower(0);

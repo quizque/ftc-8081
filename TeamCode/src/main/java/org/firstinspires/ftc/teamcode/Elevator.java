@@ -22,8 +22,8 @@ public class Elevator {
 
     private final DcMotorEx wench;
 
-    ServoImplEx servo_hook_left;
-    ServoImplEx servo_hook_right;
+//    ServoImplEx servo_hook_left;
+//    ServoImplEx servo_hook_right;
 
     private final PIDFController pid_left;
     private final PIDFController pid_right;
