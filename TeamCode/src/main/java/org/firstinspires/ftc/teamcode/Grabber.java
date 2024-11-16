@@ -87,6 +87,8 @@ public class Grabber {
         PARAMS.arm_goal = PARAMS.pose_arm_inside;
     }
 
+    public void armToPrepareToHook( ) {PARAMS.arm_goal = PARAMS.pose_arm_prepare_hook; }
+
     public void armToHook() {
         PARAMS.arm_goal = PARAMS.pose_arm_hook;
     }
@@ -154,7 +156,9 @@ public class Grabber {
 
     public static class Params {
         public double pose_arm_inside = 0.95;
-        public double pose_arm_hook = 0.45;
+
+        public double pose_arm_prepare_hook = 0.45;
+        public double pose_arm_hook = 0.52;
         public double pose_arm_floor = 0.33;
 
         public double pose_slide_out = 0.615;

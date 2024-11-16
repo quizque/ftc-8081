@@ -45,31 +45,28 @@ public class teleop8081 extends OpMode {
 
         // Update pose estimator
         mecanumDrive.updatePoseEstimate();
-        double maxDriveSpeed = 1.0 - map(clamp(elevator.getCurrentHeight() / 4000.0, 0.0, 1.0), 0.0, 1.0, 0.0, 0.8);
-        mecanumDrive.driveWithController(gamepad1, maxDriveSpeed, 0.75);
+        double maxDriveSpeed = 1.0 - map(clamp(elevator.getCurrentHeight() / 4000.0, 0.0, 1.0), 0.0, 1.0, 0.0, 0.7);
+        double maxRotateSpeed = 0.75 - map(clamp(elevator.getCurrentHeight() / 4000.0, 0.0, 1.0), 0.0, 1.0, 0.0, 0.4);
+        mecanumDrive.driveWithController(gamepad1, maxDriveSpeed, maxRotateSpeed);
 
         // Get execution time
         long dt = System.currentTimeMillis() - prev_time;
         prev_time = System.currentTimeMillis();
 
-        if (gamepad1.right_bumper) {
-            grabber.intakeOut();
-        } else if (gamepad1.left_bumper) {
-            grabber.intakeIn();
-        } else {
-            grabber.intakeStop();
-        }
+        grabber.intakeSetPower(linearDeadband(gamepad1.right_trigger, 0.1) + (gamepad1.right_bumper ? 1.0 : 0.0) * 0.5  - linearDeadband(gamepad1.left_trigger, 0.1));
 
-        if (gamepad1.b) {
-            grabber.armToInside();
+        if (gamepad1.a) {
+            grabber.armToFloor();
         } else if (gamepad1.y) {
             grabber.armToHook();
+        } else if (gamepad1.b) {
+            grabber.armToPrepareToHook();
         } else if (gamepad1.x) {
-            grabber.armToFloor();
+            grabber.armToInside();
         }
 
-        slide_position += PARAMS.slide_speed * dt * linearDeadband(gamepad1.left_trigger, 0.1);
-        slide_position -= PARAMS.slide_speed * dt * linearDeadband(gamepad1.right_trigger, 0.1);
+        slide_position += PARAMS.slide_speed * dt * (gamepad1.right_bumper ? 1.0 : 0.0);
+        slide_position -= PARAMS.slide_speed * dt * (gamepad1.left_bumper ? 1.0 : 0.0);
         slide_position = clamp(slide_position, 0.0, 1.0);
         grabber.slideToPercent(slide_position);
 
@@ -77,7 +74,7 @@ public class teleop8081 extends OpMode {
         if (gamepad1.dpad_down) {
             elevator.setHeight(0);
         } else if (gamepad1.dpad_left) {
-            elevator.setHeight(1000);
+            elevator.setHeight(1400);
         } else if (gamepad1.dpad_right) {
             elevator.setHeight(2000);
         } else if (gamepad1.dpad_up) {
