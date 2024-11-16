@@ -9,121 +9,153 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
 
 @Config
 public class Elevator {
     public static Elevator.Params PARAMS = new Elevator.Params();
 //    private FtcDashboard dash = FtcDashboard.getInstance();
 
-    private final DcMotorEx elevatorLeft;
-    private final DcMotorEx elevatorRight;
+    private final DcMotorEx elevator_left;
+    private final DcMotorEx elevator_right;
 
-    private final PIDFController pidLeft;
-    private final PIDFController pidRight;
+    private final DcMotorEx wench;
 
-    private double targetHeight = 0.0;
+    ServoImplEx servo_hook_left;
+    ServoImplEx servo_hook_right;
 
-    private final Timing.Timer resetEncoderTimer;
+    private final PIDFController pid_left;
+    private final PIDFController pid_right;
+
+    private double target_height = 0.0;
+
+    private final Timing.Timer reset_encoder_timer;
 
     public Elevator(HardwareMap hardwareMap) {
 
-        elevatorLeft = hardwareMap.get(DcMotorEx.class, "elevatorLeft");
-        elevatorRight = hardwareMap.get(DcMotorEx.class, "elevatorRight");
+        elevator_left = hardwareMap.get(DcMotorEx.class, "elevatorLeft");
+        elevator_right = hardwareMap.get(DcMotorEx.class, "elevatorRight");
+
+        wench = hardwareMap.get(DcMotorEx.class, "motorWench");
+
+//        servo_hook_left = hardwareMap.get(ServoImplEx.class, "servoHookLeft");
+//        servo_hook_right = hardwareMap.get(ServoImplEx.class, "servoHookRight");
 
         // Set idle behavior
-        elevatorLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        elevatorRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        elevator_left.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        elevator_right.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        wench.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Reverse motor direction
-        elevatorLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        elevator_left.setDirection(DcMotorSimple.Direction.REVERSE);
 //        elevatorRight.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        elevatorLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        elevatorRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        servo_hook_left.setDirection(Servo.Direction.REVERSE);
 
-        elevatorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        elevatorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        elevator_left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        elevator_right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        pidLeft = new PIDController(PARAMS.kP, PARAMS.kI, PARAMS.kD);
-        pidRight = new PIDController(PARAMS.kP, PARAMS.kI, PARAMS.kD);
+        elevator_left.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        elevator_right.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        pidLeft.setP(PARAMS.kP);
-        pidLeft.setI(PARAMS.kI);
-        pidLeft.setD(PARAMS.kD);
+        pid_left = new PIDController(PARAMS.kP, PARAMS.kI, PARAMS.kD);
+        pid_right = new PIDController(PARAMS.kP, PARAMS.kI, PARAMS.kD);
 
-        pidRight.setP(PARAMS.kP);
-        pidRight.setI(PARAMS.kI);
-        pidRight.setD(PARAMS.kD);
+        pid_left.setP(PARAMS.kP);
+        pid_left.setI(PARAMS.kI);
+        pid_left.setD(PARAMS.kD);
 
-        resetEncoderTimer = new Timing.Timer(3);
+        pid_right.setP(PARAMS.kP);
+        pid_right.setI(PARAMS.kI);
+        pid_right.setD(PARAMS.kD);
+
+        reset_encoder_timer = new Timing.Timer(3);
+
+//        servo_hook_left.setPwmEnable();
+//        servo_hook_right.setPwmEnable();
     }
 
+    /////////////////////////////////////////////////////////////
+
     public void setHeight(double height) {
-        targetHeight = Math.min(Math.max(PARAMS.encoderMinimum, height), PARAMS.encoderMaximum);
+        target_height = Math.min(Math.max(PARAMS.encoderMinimum, height), PARAMS.encoderMaximum);
     }
 
     public boolean atTarget() {
-        return Math.abs(((elevatorLeft.getCurrentPosition() + elevatorRight.getCurrentPosition()) / 2.0) - targetHeight) < 80.0;
+        return Math.abs(((elevator_left.getCurrentPosition() + elevator_right.getCurrentPosition()) / 2.0) - target_height) < 80.0;
     }
     public boolean atTarget(double error) {
-        return Math.abs(((elevatorLeft.getCurrentPosition() + elevatorRight.getCurrentPosition()) / 2.0) - targetHeight) < error;
+        return Math.abs(((elevator_left.getCurrentPosition() + elevator_right.getCurrentPosition()) / 2.0) - target_height) < error;
     }
 
     public double getCurrentHeight() {
-        return (elevatorLeft.getCurrentPosition() + elevatorRight.getCurrentPosition()) / 2.0;
+        return (elevator_left.getCurrentPosition() + elevator_right.getCurrentPosition()) / 2.0;
     }
 
-    public void run() {
-//        TelemetryPacket packet = new TelemetryPacket();
+    /////////////////////////////////////////////////////////////
 
+    public void setHookPercent(double percent) {
+        PARAMS.hook_target = clamp(percent, PARAMS.hook_min, PARAMS.hook_max);
+    }
+
+    /////////////////////////////////////////////////////////////
+
+    public void setWenchPower(double power) {
+        PARAMS.wench_power = power;
+    }
+
+    /////////////////////////////////////////////////////////////
+
+    public void run() {
         // Drive motors
-        double l = pidLeft.calculate(elevatorLeft.getCurrentPosition(), targetHeight) + PARAMS.kG;
-        double r = pidRight.calculate(elevatorRight.getCurrentPosition(), targetHeight) + PARAMS.kG;
+        double l = pid_left.calculate(elevator_left.getCurrentPosition(), target_height) + PARAMS.kG;
+        double r = pid_right.calculate(elevator_right.getCurrentPosition(), target_height) + PARAMS.kG;
 
         l = Math.min(Math.max(PARAMS.minSpeed, l), PARAMS.maxSpeed);
         r = Math.min(Math.max(PARAMS.minSpeed, r), PARAMS.maxSpeed);
 
-        if (targetHeight == 0.0 && elevatorLeft.getCurrentPosition() <= 100 && elevatorRight.getCurrentPosition() <= 100) {
+        if (target_height == 0.0 && elevator_left.getCurrentPosition() <= 100 && elevator_right.getCurrentPosition() <= 100) {
             l = 0;
             r = 0;
 
-            if (!resetEncoderTimer.isTimerOn()) {
-                resetEncoderTimer.start();
+            if (!reset_encoder_timer.isTimerOn()) {
+                reset_encoder_timer.start();
 
             }
 
-            if (resetEncoderTimer.done()) {
-                elevatorLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                elevatorRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            if (reset_encoder_timer.done()) {
+                elevator_left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                elevator_right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-                elevatorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                elevatorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                elevator_left.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+                elevator_right.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-                resetEncoderTimer.pause();
+                reset_encoder_timer.pause();
             }
         } else {
-            resetEncoderTimer.pause();
+            reset_encoder_timer.pause();
         }
 
-//        packet.put("pid_left", l);
-//        packet.put("pid_right", r);
-//        packet.put("encoder_left", elevatorLeft.getCurrentPosition());
-//        packet.put("encoder_right", elevatorRight.getCurrentPosition());
-//        packet.put("elevator-target", targetHeight);
-//        packet.put("reset_timer", resetEncoderTimer.remainingTime());
+        elevator_left.setPower(l);
+        elevator_right.setPower(r);
 
-        elevatorLeft.setPower(l);
-        elevatorRight.setPower(r);
+//        servo_hook_right.setPosition(PARAMS.hook_target);
+//        servo_hook_left.setPosition(PARAMS.hook_target);
 
-//        dash.sendTelemetryPacket(packet);
+        wench.setPower(PARAMS.wench_power);
     }
 
     public void run(TelemetryPacket packet) {
         run();
-        packet.put("elevator_left", elevatorLeft.getCurrentPosition());
-        packet.put("elevator_right", elevatorRight.getCurrentPosition());
-        packet.put("elevator_target", targetHeight);
-        packet.put("elevator_timer", resetEncoderTimer.remainingTime());
+        packet.put("elevator_left", elevator_left.getCurrentPosition());
+        packet.put("elevator_right", elevator_right.getCurrentPosition());
+        packet.put("elevator_target", target_height);
+        packet.put("elevator_timer", reset_encoder_timer.remainingTime());
+    }
+
+    public static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(value, max));
     }
 
     public static class Params {
@@ -141,5 +173,11 @@ public class Elevator {
         // Elevator height constants (in units of encoder ticks)
         public double encoderMinimum = 0.0;
         public double encoderMaximum = 4000.0;
+
+        public double hook_min = 0.0;
+        public double hook_max = 1.0;
+        public double hook_target = 0.5;
+
+        public double wench_power = 0.0;
     }
 }

@@ -15,7 +15,7 @@ import java.util.List;
 @TeleOp(name = "8081 TeleOp - 2024")
 @Config
 public class teleop8081 extends OpMode {
-    public static ArmTest.Params PARAMS = new ArmTest.Params();
+    public static Params PARAMS = new Params();
 
     private FtcDashboard dash = FtcDashboard.getInstance();
 
@@ -78,6 +78,8 @@ public class teleop8081 extends OpMode {
         } else if (gamepad1.dpad_up) {
             elevator.setHeight(4000);
         }
+
+        elevator.setWenchPower(gamepad2.left_stick_y);
 
         grabber.run(packet);
         elevator.run(packet);
