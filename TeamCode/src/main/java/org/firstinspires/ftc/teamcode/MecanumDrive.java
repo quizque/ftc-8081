@@ -493,61 +493,86 @@ public final class MecanumDrive {
         return Math.abs(raw) < deadband ? 0 : Math.signum(raw) * (Math.abs(raw) - deadband) / (1 - deadband);
     }
 
-    public class ControllerDriveAction implements Action {
+    public void driveWithController(Gamepad gamepad) {
 
-        Gamepad gamepad;
+        //////////////////////////////////////////////////
+        // Controller remapping
 
-        public ControllerDriveAction(Gamepad gamepad) {
-            this.gamepad = gamepad;
-        }
+        // Get translation power
+        Vector2d dir = new Vector2d(
+                -gamepad.left_stick_y,
+                -gamepad.left_stick_x
+        );
 
-        @Override
-        public boolean run(@NonNull TelemetryPacket packet) {
+        // Get rotation power
+        float rotation_in = -gamepad.right_stick_x;
 
+        // Convert the translation power to a magnitude and angle
+        double mag = linearDeadband(dir.norm(), 0.03);
+        Rotation2d ang = dir.angleCast();
 
+        // Apply a square curve to the translation power
+//        mag = Math.pow(mag, 2.0);
 
-            //////////////////////////////////////////////////
-            // Controller remapping
+        // Get vector from magnitude and angle
+        Vector2d translationPower = new Vector2d(
+                mag * Math.cos(ang.toDouble()),
+                mag * Math.sin(ang.toDouble())
+        );
 
-            // Get translation power
-            Vector2d dir = new Vector2d(
-                    -gamepad.left_stick_y,
-                    -gamepad.left_stick_x
-            );
+        // Apply square curve to the rotation power
+        double rotation_power = Math.pow(linearDeadband(rotation_in, 0.03), 2) * Math.signum(rotation_in);
 
-            // Get rotation power
-            float rotation_in = -gamepad.right_stick_x;
+        // Generate the final translation/rotation variable
+        PoseVelocity2d mechDrivePower = new PoseVelocity2d(translationPower, rotation_power);
 
-            // Convert the translation power to a magnitude and angle
-            double mag = linearDeadband(dir.norm(), 0.03);
-            Rotation2d ang = dir.angleCast();
-
-            // Apply a square curve to the translation power
-            mag = Math.pow(mag, 2.0);
-
-            // Get vector from magnitude and angle
-            Vector2d translationPower = new Vector2d(
-                    mag * Math.cos(ang.toDouble()),
-                    mag * Math.sin(ang.toDouble())
-            );
-
-            // Apply square curve to the rotation power
-            double rotation_power = Math.pow(linearDeadband(rotation_in, 0.03), 2) * Math.signum(rotation_in);
-
-            // Generate the final translation/rotation variable
-            PoseVelocity2d mechDrivePower = new PoseVelocity2d(translationPower, rotation_power);
-
-            // Drive the mecanum wheels
-            setDrivePowers(mechDrivePower);
-
-            packet.put("drive_power", translationPower);
-            packet.put("angle_power", rotation_power);
-
-            return true;
-        }
+        // Drive the mecanum wheels
+        setDrivePowers(mechDrivePower);
     }
 
-    public Action controllerDriveAction(Gamepad gamepad) {
-        return new ControllerDriveAction(gamepad);
+    public void driveWithController(Gamepad gamepad, double max_translation_speed, double max_rotation_speed) {
+
+        //////////////////////////////////////////////////
+        // Controller remapping
+
+        // Get translation power
+        Vector2d dir = new Vector2d(
+                -gamepad.left_stick_y,
+                -gamepad.left_stick_x
+        );
+
+        // Get rotation power
+        float rotation_in = -gamepad.right_stick_x;
+
+        // Convert the translation power to a magnitude and angle
+        double mag = map(linearDeadband(dir.norm(), 0.03), 0.0, 1.0, 0.0, max_translation_speed);
+        Rotation2d ang = dir.angleCast();
+
+        // Apply a square curve to the translation power
+//        mag = Math.pow(mag, 2.0);
+
+        // Get vector from magnitude and angle
+        Vector2d translationPower = new Vector2d(
+                mag * Math.cos(ang.toDouble()),
+                mag * Math.sin(ang.toDouble())
+        );
+
+        // Apply square curve to the rotation power
+        double rotation_power = map(linearDeadband(rotation_in, 0.03), -1.0, 1.0, -max_rotation_speed, max_rotation_speed);
+
+        // Generate the final translation/rotation variable
+        PoseVelocity2d mechDrivePower = new PoseVelocity2d(translationPower, rotation_power);
+
+        // Drive the mecanum wheels
+        setDrivePowers(mechDrivePower);
     }
+
+    public static double map(double x, double inMin, double inMax, double outMin, double outMax) {
+        return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+    }
+
+    public static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(value, max));
+    }
+
 }

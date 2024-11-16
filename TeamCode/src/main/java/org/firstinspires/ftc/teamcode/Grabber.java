@@ -119,25 +119,6 @@ public class Grabber {
 
     ////////////////////////////////////////////////////////////////////////
 
-    public void run(TelemetryPacket packet) {
-        servo_slide_left.setPosition(PARAMS.slide_goal);
-        servo_slide_right.setPosition(PARAMS.slide_goal);
-
-        servo_arm_left.setPosition(PARAMS.arm_goal);
-        servo_arm_right.setPosition(PARAMS.arm_goal);
-
-        servo_intake_right.setPower(PARAMS.intake_power);
-        servo_intake_left.setPower(PARAMS.intake_power);
-
-        // For debugging
-        packet.put("grabber_slide_left", servo_slide_left.getPosition());
-        packet.put("grabber_slide_right", servo_slide_right.getPosition());
-        packet.put("grabber_arm_left", servo_arm_left.getPosition());
-        packet.put("grabber_arm_right", servo_arm_right.getPosition());
-        packet.put("grabber_intake_left", servo_intake_left.getPower());
-        packet.put("grabber_intake_right", servo_intake_right.getPower());
-    }
-
     public void run() {
         servo_slide_left.setPosition(PARAMS.slide_goal);
         servo_slide_right.setPosition(PARAMS.slide_goal);
@@ -149,6 +130,17 @@ public class Grabber {
         servo_intake_left.setPower(PARAMS.intake_power);
     }
 
+    public void run(TelemetryPacket packet) {
+        run();
+
+        // For debugging
+        packet.put("grabber_slide_left", servo_slide_left.getPosition());
+        packet.put("grabber_slide_right", servo_slide_right.getPosition());
+        packet.put("grabber_arm_left", servo_arm_left.getPosition());
+        packet.put("grabber_arm_right", servo_arm_right.getPosition());
+        packet.put("grabber_intake_left", servo_intake_left.getPower());
+        packet.put("grabber_intake_right", servo_intake_right.getPower());
+    }
 
     ////////////////////////////////////////////////////////////////////////
 

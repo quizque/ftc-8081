@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.util.Timing;
@@ -68,6 +69,10 @@ public class Elevator {
         return Math.abs(((elevatorLeft.getCurrentPosition() + elevatorRight.getCurrentPosition()) / 2.0) - targetHeight) < error;
     }
 
+    public double getCurrentHeight() {
+        return (elevatorLeft.getCurrentPosition() + elevatorRight.getCurrentPosition()) / 2.0;
+    }
+
     public void run() {
 //        TelemetryPacket packet = new TelemetryPacket();
 
@@ -111,6 +116,14 @@ public class Elevator {
         elevatorRight.setPower(r);
 
 //        dash.sendTelemetryPacket(packet);
+    }
+
+    public void run(TelemetryPacket packet) {
+        run();
+        packet.put("elevator_left", elevatorLeft.getCurrentPosition());
+        packet.put("elevator_right", elevatorRight.getCurrentPosition());
+        packet.put("elevator_target", targetHeight);
+        packet.put("elevator_timer", resetEncoderTimer.remainingTime());
     }
 
     public static class Params {
