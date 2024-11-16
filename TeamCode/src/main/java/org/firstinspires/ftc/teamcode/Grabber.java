@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
-import androidx.annotation.NonNull;
-
+import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -9,6 +8,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 
+@Config
 public class Grabber {
     public static Params PARAMS = new Params();
 
@@ -61,7 +61,7 @@ public class Grabber {
 
     ////////////////////////////////////////////////////////////////////////
 
-    public void intakeGo() {
+    public void intakeOut() {
         PARAMS.intake_power = 1.0;
     }
 
@@ -69,7 +69,7 @@ public class Grabber {
         PARAMS.intake_power = 0.0;
     }
 
-    public void intakeReverse() {
+    public void intakeIn() {
         PARAMS.intake_power = -1.0;
     }
 
@@ -154,7 +154,7 @@ public class Grabber {
 
     public static class Params {
         public double pose_arm_inside = 0.95;
-        public double pose_arm_hook = 0.55;
+        public double pose_arm_hook = 0.45;
         public double pose_arm_floor = 0.33;
 
         public double pose_slide_out = 0.615;

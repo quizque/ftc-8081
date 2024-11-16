@@ -4,20 +4,8 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.acmerobotics.roadrunner.Action;
-import com.acmerobotics.roadrunner.Pose2d;
-import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.CRServo;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.ServoImplEx;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @TeleOp(name = "Arm Test")
 @Config
@@ -48,9 +36,9 @@ public class ArmTest extends OpMode {
         prev_time = System.currentTimeMillis();
 
         if (gamepad1.right_bumper) {
-            grabber.intakeGo();
+            grabber.intakeOut();
         } else if (gamepad1.left_bumper) {
-            grabber.intakeReverse();
+            grabber.intakeIn();
         } else {
             grabber.intakeStop();
         }

@@ -22,13 +22,11 @@ public class Elevator {
 
     private final DcMotorEx wench;
 
-//    ServoImplEx servo_hook_left;
-//    ServoImplEx servo_hook_right;
+    ServoImplEx servo_hook_left;
+    ServoImplEx servo_hook_right;
 
     private final PIDFController pid_left;
     private final PIDFController pid_right;
-
-    private double target_height = 0.0;
 
     private final Timing.Timer reset_encoder_timer;
 
@@ -39,8 +37,8 @@ public class Elevator {
 
         wench = hardwareMap.get(DcMotorEx.class, "motorWench");
 
-//        servo_hook_left = hardwareMap.get(ServoImplEx.class, "servoHookLeft");
-//        servo_hook_right = hardwareMap.get(ServoImplEx.class, "servoHookRight");
+        servo_hook_left = hardwareMap.get(ServoImplEx.class, "servoHookLeft");
+        servo_hook_right = hardwareMap.get(ServoImplEx.class, "servoHookRight");
 
         // Set idle behavior
         elevator_left.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -51,13 +49,15 @@ public class Elevator {
         elevator_left.setDirection(DcMotorSimple.Direction.REVERSE);
 //        elevatorRight.setDirection(DcMotorSimple.Direction.REVERSE);
 
-//        servo_hook_left.setDirection(Servo.Direction.REVERSE);
+        servo_hook_left.setDirection(Servo.Direction.REVERSE);
 
         elevator_left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         elevator_right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        wench.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         elevator_left.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         elevator_right.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        wench.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         pid_left = new PIDController(PARAMS.kP, PARAMS.kI, PARAMS.kD);
         pid_right = new PIDController(PARAMS.kP, PARAMS.kI, PARAMS.kD);
@@ -72,31 +72,54 @@ public class Elevator {
 
         reset_encoder_timer = new Timing.Timer(3);
 
-//        servo_hook_left.setPwmEnable();
-//        servo_hook_right.setPwmEnable();
+        servo_hook_left.setPwmEnable();
+        servo_hook_right.setPwmEnable();
+
+        servo_hook_left.setPosition(PARAMS.hook_target);
+        servo_hook_right.setPosition(PARAMS.hook_target);
     }
 
     /////////////////////////////////////////////////////////////
 
     public void setHeight(double height) {
-        target_height = Math.min(Math.max(PARAMS.encoderMinimum, height), PARAMS.encoderMaximum);
+        PARAMS.target_height = Math.min(Math.max(PARAMS.encoderMinimum, height), PARAMS.encoderMaximum);
     }
 
     public boolean atTarget() {
-        return Math.abs(((elevator_left.getCurrentPosition() + elevator_right.getCurrentPosition()) / 2.0) - target_height) < 80.0;
+        return Math.abs(((elevator_left.getCurrentPosition() + elevator_right.getCurrentPosition()) / 2.0) - PARAMS.target_height) < 80.0;
     }
     public boolean atTarget(double error) {
-        return Math.abs(((elevator_left.getCurrentPosition() + elevator_right.getCurrentPosition()) / 2.0) - target_height) < error;
+        return Math.abs(((elevator_left.getCurrentPosition() + elevator_right.getCurrentPosition()) / 2.0) - PARAMS.target_height) < error;
     }
 
     public double getCurrentHeight() {
         return (elevator_left.getCurrentPosition() + elevator_right.getCurrentPosition()) / 2.0;
     }
 
-    /////////////////////////////////////////////////////////////
+    public void setAutoReset(boolean enabled) {
+        PARAMS.elevator_enable_auto_reset = enabled;
+    }
 
+
+    /////////////////////////////////////////////////////////////
     public void setHookPercent(double percent) {
-        PARAMS.hook_target = clamp(percent, PARAMS.hook_min, PARAMS.hook_max);
+        PARAMS.hook_target = clamp(map(percent, 0.0, 1.0, PARAMS.hook_outside, PARAMS.hook_inside), PARAMS.hook_outside, PARAMS.hook_inside);
+    }
+
+    public void setHookInside() {
+        PARAMS.hook_target = PARAMS.hook_inside;
+    }
+
+    public void setHookOutside() {
+        PARAMS.hook_target = PARAMS.hook_outside;
+    }
+
+    public void setHookIdle() {
+        PARAMS.hook_target = PARAMS.hook_idle;
+    }
+
+    public void setHookToAttach() {
+        PARAMS.hook_target = 0.325;
     }
 
     /////////////////////////////////////////////////////////////
@@ -109,13 +132,13 @@ public class Elevator {
 
     public void run() {
         // Drive motors
-        double l = pid_left.calculate(elevator_left.getCurrentPosition(), target_height) + PARAMS.kG;
-        double r = pid_right.calculate(elevator_right.getCurrentPosition(), target_height) + PARAMS.kG;
+        double l = pid_left.calculate(elevator_left.getCurrentPosition(), PARAMS.target_height) + PARAMS.kG;
+        double r = pid_right.calculate(elevator_right.getCurrentPosition(), PARAMS.target_height) + PARAMS.kG;
 
         l = Math.min(Math.max(PARAMS.minSpeed, l), PARAMS.maxSpeed);
         r = Math.min(Math.max(PARAMS.minSpeed, r), PARAMS.maxSpeed);
 
-        if (target_height == 0.0 && elevator_left.getCurrentPosition() <= 100 && elevator_right.getCurrentPosition() <= 100) {
+        if (PARAMS.target_height == 0.0 && elevator_left.getCurrentPosition() <= 100 && elevator_right.getCurrentPosition() <= 100 && PARAMS.elevator_enable_auto_reset) {
             l = 0;
             r = 0;
 
@@ -140,8 +163,8 @@ public class Elevator {
         elevator_left.setPower(l);
         elevator_right.setPower(r);
 
-//        servo_hook_right.setPosition(PARAMS.hook_target);
-//        servo_hook_left.setPosition(PARAMS.hook_target);
+        servo_hook_right.setPosition(PARAMS.hook_target);
+        servo_hook_left.setPosition(PARAMS.hook_target);
 
         wench.setPower(PARAMS.wench_power);
     }
@@ -150,12 +173,16 @@ public class Elevator {
         run();
         packet.put("elevator_left", elevator_left.getCurrentPosition());
         packet.put("elevator_right", elevator_right.getCurrentPosition());
-        packet.put("elevator_target", target_height);
         packet.put("elevator_timer", reset_encoder_timer.remainingTime());
+        packet.put("elevator_wrench", wench.getCurrentPosition());
     }
 
     public static double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(value, max));
+    }
+
+    public static double map(double x, double inMin, double inMax, double outMin, double outMax) {
+        return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
     }
 
     public static class Params {
@@ -168,15 +195,22 @@ public class Elevator {
         public double kD = 0.0001;
 
         public double maxSpeed = 1.0;
-        public double minSpeed = -0.3;
+        public double minSpeed = -1.0;//-0.3;
 
         // Elevator height constants (in units of encoder ticks)
         public double encoderMinimum = 0.0;
         public double encoderMaximum = 4000.0;
 
-        public double hook_min = 0.0;
-        public double hook_max = 1.0;
-        public double hook_target = 0.5;
+        public double target_height = 0.0;
+
+        public double hook_outside = 0.025;
+        public double hook_inside = 1.0;
+        public double hook_idle = 0.375;
+        public double hook_target = hook_inside;
+
+        public boolean elevator_enable_auto_reset = true;
+
+        public double elevator_pose_ready_to_hook = 2000.0;
 
         public double wench_power = 0.0;
     }

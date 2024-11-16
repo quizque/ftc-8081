@@ -4,13 +4,9 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @TeleOp(name = "8081 TeleOp - 2024")
 @Config
@@ -35,31 +31,40 @@ public class teleop8081 extends OpMode {
         grabber = new Grabber(hardwareMap);
     }
 
+    private boolean ranOnce = false;
+
     @Override
     public void loop() {
+        if (!ranOnce) {
+            elevator.setHookOutside();
+            ranOnce = true;
+        }
+
+
         TelemetryPacket packet = new TelemetryPacket();
 
         // Update pose estimator
         mecanumDrive.updatePoseEstimate();
-        mecanumDrive.driveWithController(gamepad1, 0.8 * (1.0 - elevator.getCurrentHeight() / 4000.0), 0.5);
+        double maxDriveSpeed = 1.0 - map(clamp(elevator.getCurrentHeight() / 4000.0, 0.0, 1.0), 0.0, 1.0, 0.0, 0.8);
+        mecanumDrive.driveWithController(gamepad1, maxDriveSpeed, 0.75);
 
         // Get execution time
         long dt = System.currentTimeMillis() - prev_time;
         prev_time = System.currentTimeMillis();
 
         if (gamepad1.right_bumper) {
-            grabber.intakeGo();
+            grabber.intakeOut();
         } else if (gamepad1.left_bumper) {
-            grabber.intakeReverse();
+            grabber.intakeIn();
         } else {
             grabber.intakeStop();
         }
 
-        if (gamepad1.x) {
+        if (gamepad1.b) {
             grabber.armToInside();
         } else if (gamepad1.y) {
             grabber.armToHook();
-        } else if (gamepad1.b) {
+        } else if (gamepad1.x) {
             grabber.armToFloor();
         }
 
@@ -74,9 +79,20 @@ public class teleop8081 extends OpMode {
         } else if (gamepad1.dpad_left) {
             elevator.setHeight(1000);
         } else if (gamepad1.dpad_right) {
-            elevator.setHeight(2500);
+            elevator.setHeight(2000);
         } else if (gamepad1.dpad_up) {
             elevator.setHeight(4000);
+        } else if (gamepad2.dpad_up) {
+            elevator.setHeight(2000);
+            elevator.setHookOutside();
+        } else if (gamepad2.dpad_right) {
+            elevator.setHeight(1800);
+            elevator.setHookToAttach();
+        } else if (gamepad2.dpad_left) {
+            elevator.setHeight(1600);
+            grabber.slideToPercent(0.15);
+        } else if (gamepad2.dpad_down) {
+            elevator.setHeight(0);
         }
 
         elevator.setWenchPower(gamepad2.left_stick_y);
@@ -88,11 +104,28 @@ public class teleop8081 extends OpMode {
         packet.put("dt", dt);
         packet.put("slide_pose", slide_position);
 
+        telemetry.addData("x", mecanumDrive.pose.position.x);
+        telemetry.addData("y", mecanumDrive.pose.position.y);
+        telemetry.addData("heading (deg)", Math.toDegrees(mecanumDrive.pose.heading.toDouble()));
+        telemetry.update();
+
+        packet.fieldOverlay().setStroke("#3F51B5");
+        Drawing.drawRobot(packet.fieldOverlay(), mecanumDrive.pose);
+
         dash.sendTelemetryPacket(packet);
+    }
+
+    @Override
+    public void stop() {
+
     }
 
     private static double linearDeadband(double raw, double deadband) {
         return Math.abs(raw) < deadband ? 0 : Math.signum(raw) * (Math.abs(raw) - deadband) / (1 - deadband);
+    }
+
+    public static double map(double x, double inMin, double inMax, double outMin, double outMax) {
+        return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
     }
 
     public static double clamp(double value, double min, double max) {

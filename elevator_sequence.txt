@@ -1,0 +1,12 @@
+2000 -> Start to climb
+1800 -> Climber attached (servo 0.325)
+1600 -> Off ground (slide to 0.15)
+0 -> 
+Wrench
+
+
+
+Camera offset
+7.825x
+3.39y
+8z (4.669+3.5)

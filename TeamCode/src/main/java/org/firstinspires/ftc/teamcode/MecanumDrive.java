@@ -152,6 +152,21 @@ public final class MecanumDrive {
         return twist.velocity().value();
     }
 
+    public void updatePoseEstimateVision(Pose2d pos) {
+        pose = new Pose2d(pos.position.x * PARAMS.kVisionAlpha + (1.0 - PARAMS.kVisionAlpha) * pose.position.x,
+                pos.position.y * PARAMS.kVisionAlpha + (1.0 - PARAMS.kVisionAlpha) * pose.position.y,
+                pos.heading.toDouble() * PARAMS.kVisionAlphaRot + (1.0 - PARAMS.kVisionAlphaRot) * pose.heading.toDouble());
+
+
+
+        poseHistory.add(pose);
+        while (poseHistory.size() > 100) {
+            poseHistory.removeFirst();
+        }
+
+        estimatedPoseWriter.write(new PoseMessage(pose));
+    }
+
     private void drawPoseHistory(Canvas c) {
         double[] xPoints = new double[poseHistory.size()];
         double[] yPoints = new double[poseHistory.size()];
@@ -203,6 +218,9 @@ public final class MecanumDrive {
         public double kS = 1.0126808250652674;
         public double kV = 0.00012874864720419657;
         public double kA = 0.000026;
+
+        public double kVisionAlpha = 0.5;
+        public double kVisionAlphaRot = 0.0;
 
         // path profile parameters (in inches)
         public double maxWheelVel = 50;
