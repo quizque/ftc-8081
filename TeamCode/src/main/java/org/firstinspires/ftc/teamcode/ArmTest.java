@@ -22,31 +22,10 @@ import java.util.List;
 @TeleOp(name = "Arm Test")
 @Config
 public class ArmTest extends OpMode {
-
     public static Params PARAMS = new Params();
 
     private FtcDashboard dash = FtcDashboard.getInstance();
-
-    ServoImplEx servoRight;
-    ServoImplEx servoLeft;
-
-    ServoImplEx servoSlideRight;
-    ServoImplEx servoSlideLeft;
-
-    CRServo intakeRightServo;
-    CRServo intakeLeftServo;
-
-    private static final double SERVO_INSIDE = 0.95;
-    private static final double SERVO_HOOK = 0.55;
-    private static final double SERVO_FLOOR = 0.33;
-
-    private static final double SLIDE_OUT = 0.615;
-    private static final double SLIDE_IN = 0.45;
-
-    private double slidePos = SLIDE_IN;
-
-
-
+    private Grabber grabber;
 
 
 
@@ -54,84 +33,57 @@ public class ArmTest extends OpMode {
     public void init() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-        servoLeft = hardwareMap.get(ServoImplEx.class, "servoWristLeft");
-        servoRight = hardwareMap.get(ServoImplEx.class, "servoWristRight");
-
-        intakeLeftServo = hardwareMap.get(CRServo.class, "servoIntakeLeft");
-        intakeRightServo = hardwareMap.get(CRServo.class, "servoIntakeRight");
-
-        servoSlideRight = hardwareMap.get(ServoImplEx.class, "servoSlideRight");
-        servoSlideLeft = hardwareMap.get(ServoImplEx.class, "servoSlideLeft");
-
-         servoLeft.setDirection(Servo.Direction.REVERSE);
-
-        servoLeft.setPwmEnable();
-        servoRight.setPwmEnable();
-
-        servoSlideLeft.setPwmEnable();
-        servoSlideRight.setPwmEnable();
-
-        intakeLeftServo.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        servoSlideLeft.setDirection(Servo.Direction.REVERSE);
-
-        servoSlideLeft.setPosition(PARAMS.slide_goal);
-        servoSlideRight.setPosition(PARAMS.slide_goal);
-
-
-        servoLeft.setPosition(PARAMS.goal);
-        servoRight.setPosition(PARAMS.goal);
-
-        intakeLeftServo.setPower(PARAMS.intake_pwr);
-        intakeRightServo.setPower(PARAMS.intake_pwr);
+        grabber = new Grabber(hardwareMap);
     }
+
+    private long prev_time = System.currentTimeMillis();
+    private double slide_position = 0.0;
 
     @Override
     public void loop() {
         TelemetryPacket packet = new TelemetryPacket();
 
+        // Get execution time
+        long dt = System.currentTimeMillis() - prev_time;
+        prev_time = System.currentTimeMillis();
+
         if (gamepad1.right_bumper) {
-            PARAMS.intake_pwr = 1.0;
+            grabber.intakeGo();
         } else if (gamepad1.left_bumper) {
-            PARAMS.intake_pwr = -1.0;
+            grabber.intakeReverse();
         } else {
-            PARAMS.intake_pwr = 0.0;
+            grabber.intakeStop();
         }
 
         if (gamepad1.x) {
-            PARAMS.goal = SERVO_INSIDE;
+            grabber.armToInside();
         } else if (gamepad1.y) {
-            PARAMS.goal = SERVO_HOOK;
+            grabber.armToHook();
         } else if (gamepad1.b) {
-            PARAMS.goal = SERVO_FLOOR;
+            grabber.armToFloor();
         }
 
-        PARAMS.slide_goal = Math.min(Math.max(PARAMS.slide_goal + gamepad1.right_trigger*PARAMS.slide_speed_factor, SLIDE_IN), SLIDE_OUT);
-        PARAMS.slide_goal = Math.min(Math.max(PARAMS.slide_goal - gamepad1.left_trigger*PARAMS.slide_speed_factor, SLIDE_IN), SLIDE_OUT);
+        slide_position += PARAMS.slide_speed * dt * linearDeadband(gamepad1.left_trigger, 0.1);
+        slide_position -= PARAMS.slide_speed * dt * linearDeadband(gamepad1.right_trigger, 0.1);
+        slide_position = clamp(slide_position, 0.0, 1.0);
+        grabber.slideToPercent(slide_position);
 
-        servoSlideLeft.setPosition(PARAMS.slide_goal);
-        servoSlideRight.setPosition(PARAMS.slide_goal);
+        grabber.run(packet);
 
-
-        servoLeft.setPosition(PARAMS.goal);
-        servoRight.setPosition(PARAMS.goal);
-
-        intakeLeftServo.setPower(PARAMS.intake_pwr);
-        intakeRightServo.setPower(PARAMS.intake_pwr);
-
-        packet.put("left_servo", servoLeft.getPosition());
-        packet.put("right_servo", servoRight.getPosition());
-
+        packet.put("dt", dt);
+        packet.put("slide_pose", slide_position);
         dash.sendTelemetryPacket(packet);
     }
 
-    public static class Params {
-        // https://docs.wpilib.org/en/stable/docs/software/advanced-controls/introduction/introduction-to-feedforward.html#elevator-feedforward
-        public double goal = SERVO_FLOOR;
-
-        public double slide_speed_factor = 0.01;
-        public double slide_goal = 0.5;
-        public double intake_pwr = 0.0;
+    private static double linearDeadband(double raw, double deadband) {
+        return Math.abs(raw) < deadband ? 0 : Math.signum(raw) * (Math.abs(raw) - deadband) / (1 - deadband);
     }
 
+    public static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(value, max));
+    }
+
+    public static class Params {
+        public double slide_speed = 0.0001;
+    }
 }
