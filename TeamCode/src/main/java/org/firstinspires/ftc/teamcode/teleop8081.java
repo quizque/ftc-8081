@@ -4,7 +4,6 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
-import com.acmerobotics.roadrunner.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -15,7 +14,7 @@ public class teleop8081 extends OpMode {
 
     private FtcDashboard dash = FtcDashboard.getInstance();
 
-    private MecanumDrive mecanumDrive;
+//    private MecanumDrive mecanumDrive;
     private Elevator elevator;
     private Grabber grabber;
 
@@ -26,7 +25,7 @@ public class teleop8081 extends OpMode {
     public void init() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-        mecanumDrive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
+//        mecanumDrive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
         elevator = new Elevator(hardwareMap);
         grabber = new Grabber(hardwareMap);
     }
@@ -44,10 +43,10 @@ public class teleop8081 extends OpMode {
         TelemetryPacket packet = new TelemetryPacket();
 
         // Update pose estimator
-        mecanumDrive.updatePoseEstimate();
+//        mecanumDrive.updatePoseEstimate();
         double maxDriveSpeed = 1.0 - map(clamp(elevator.getCurrentHeight() / 4000.0, 0.0, 1.0), 0.0, 1.0, 0.0, 0.7);
         double maxRotateSpeed = 0.75 - map(clamp(elevator.getCurrentHeight() / 4000.0, 0.0, 1.0), 0.0, 1.0, 0.0, 0.4);
-        mecanumDrive.driveWithController(gamepad1, maxDriveSpeed, maxRotateSpeed);
+//        mecanumDrive.driveWithController(gamepad1, maxDriveSpeed, maxRotateSpeed);
 
         // Get execution time
         long dt = System.currentTimeMillis() - prev_time;
@@ -101,13 +100,13 @@ public class teleop8081 extends OpMode {
         packet.put("dt", dt);
         packet.put("slide_pose", slide_position);
 
-        telemetry.addData("x", mecanumDrive.pose.position.x);
-        telemetry.addData("y", mecanumDrive.pose.position.y);
-        telemetry.addData("heading (deg)", Math.toDegrees(mecanumDrive.pose.heading.toDouble()));
+//        telemetry.addData("x", mecanumDrive.pose.position.x);
+//        telemetry.addData("y", mecanumDrive.pose.position.y);
+//        telemetry.addData("heading (deg)", Math.toDegrees(mecanumDrive.pose.heading.toDouble()));
         telemetry.update();
 
         packet.fieldOverlay().setStroke("#3F51B5");
-        Drawing.drawRobot(packet.fieldOverlay(), mecanumDrive.pose);
+//        Drawing.drawRobot(packet.fieldOverlay(), mecanumDrive.pose);
 
         dash.sendTelemetryPacket(packet);
     }
