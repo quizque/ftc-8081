@@ -52,8 +52,8 @@ public class teleop8081 extends OpMode {
 //        mecanumDrive.updatePoseEstimate();
         double maxDriveSpeed = 1.0 - map(clamp(elevator.getCurrentHeight() / 4000.0, 0.0, 1.0), 0.0, 1.0, 0.0, 0.7);
         double maxRotateSpeed = 0.75 - map(clamp(elevator.getCurrentHeight() / 4000.0, 0.0, 1.0), 0.0, 1.0, 0.0, 0.4);
-//        mecanumDrive.driveWithController(gamepad1, maxDriveSpeed, maxRotateSpeed);
-        drive.driveWithController(gamepad1);
+        drive.driveWithController(gamepad1, maxDriveSpeed, maxRotateSpeed);
+//        drive.driveWithController(gamepad1);
         drive.update();
 
         // Get execution time

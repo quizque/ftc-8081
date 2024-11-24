@@ -260,7 +260,7 @@ public class SampleMecanumDrive extends MecanumDrive {
         setDrivePower(vel);
     }
 
-    public void driveWithController(Gamepad gamepad) {
+    public void driveWithController(Gamepad gamepad, double max_translation_speed, double max_rotation_speed) {
 
         //////////////////////////////////////////////////
         // Controller remapping
@@ -275,19 +275,23 @@ public class SampleMecanumDrive extends MecanumDrive {
         float rotation_in = -gamepad.right_stick_x;
 
         // Convert the translation power to a magnitude and angle
-        double mag = linearDeadband(dir.norm(), 0.03);
+        double mag = map(linearDeadband(dir.norm(), 0.03), 0.0, 1.0, 0.0, max_translation_speed);
         double ang = dir.angle();
 
         // Apply a square curve to the translation power
 //        mag = Math.pow(mag, 2.0);
 
-
+        // Get vector from magnitude and angle
+        Vector2d translationPower = new Vector2d(
+                mag * Math.cos(ang),
+                mag * Math.sin(ang)
+        );
 
         // Apply square curve to the rotation power
-        double rotation_power = Math.pow(linearDeadband(rotation_in, 0.03), 2) * Math.signum(rotation_in);
+        double rotation_power = map(linearDeadband(rotation_in, 0.03), -1.0, 1.0, -max_rotation_speed, max_rotation_speed);
 
         // Generate the final translation/rotation variable
-        Pose2d mechDrivePower = new Pose2d(mag * Math.cos(ang), mag * Math.sin(ang), rotation_power);
+        Pose2d mechDrivePower = new Pose2d(translationPower, rotation_power);
 
         // Drive the mecanum wheels
         setDrivePower(mechDrivePower);
