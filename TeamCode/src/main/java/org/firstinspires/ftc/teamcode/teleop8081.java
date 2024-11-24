@@ -4,8 +4,12 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 
 @TeleOp(name = "8081 TeleOp - 2024")
 @Config
@@ -14,7 +18,7 @@ public class teleop8081 extends OpMode {
 
     private FtcDashboard dash = FtcDashboard.getInstance();
 
-//    private MecanumDrive mecanumDrive;
+    SampleMecanumDrive drive;
     private Elevator elevator;
     private Grabber grabber;
 
@@ -25,9 +29,11 @@ public class teleop8081 extends OpMode {
     public void init() {
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-//        mecanumDrive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0));
+        drive = new SampleMecanumDrive(hardwareMap);
         elevator = new Elevator(hardwareMap);
         grabber = new Grabber(hardwareMap);
+
+        drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     private boolean ranOnce = false;
@@ -47,6 +53,8 @@ public class teleop8081 extends OpMode {
         double maxDriveSpeed = 1.0 - map(clamp(elevator.getCurrentHeight() / 4000.0, 0.0, 1.0), 0.0, 1.0, 0.0, 0.7);
         double maxRotateSpeed = 0.75 - map(clamp(elevator.getCurrentHeight() / 4000.0, 0.0, 1.0), 0.0, 1.0, 0.0, 0.4);
 //        mecanumDrive.driveWithController(gamepad1, maxDriveSpeed, maxRotateSpeed);
+        drive.driveWithController(gamepad1);
+        drive.update();
 
         // Get execution time
         long dt = System.currentTimeMillis() - prev_time;
@@ -100,9 +108,10 @@ public class teleop8081 extends OpMode {
         packet.put("dt", dt);
         packet.put("slide_pose", slide_position);
 
-//        telemetry.addData("x", mecanumDrive.pose.position.x);
-//        telemetry.addData("y", mecanumDrive.pose.position.y);
-//        telemetry.addData("heading (deg)", Math.toDegrees(mecanumDrive.pose.heading.toDouble()));
+        Pose2d poseEstimate = drive.getPoseEstimate();
+        telemetry.addData("x", poseEstimate.getX());
+        telemetry.addData("y", poseEstimate.getY());
+        telemetry.addData("heading", poseEstimate.getHeading());
         telemetry.update();
 
         packet.fieldOverlay().setStroke("#3F51B5");

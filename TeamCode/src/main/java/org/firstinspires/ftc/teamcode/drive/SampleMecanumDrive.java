@@ -9,6 +9,7 @@ import com.acmerobotics.roadrunner.drive.MecanumDrive;
 import com.acmerobotics.roadrunner.followers.HolonomicPIDVAFollower;
 import com.acmerobotics.roadrunner.followers.TrajectoryFollower;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder;
 import com.acmerobotics.roadrunner.trajectory.constraints.AngularVelocityConstraint;
@@ -17,11 +18,13 @@ import com.acmerobotics.roadrunner.trajectory.constraints.MinVelocityConstraint;
 import com.acmerobotics.roadrunner.trajectory.constraints.ProfileAccelerationConstraint;
 import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryAccelerationConstraint;
 import com.acmerobotics.roadrunner.trajectory.constraints.TrajectoryVelocityConstraint;
+import com.arcrobotics.ftclib.geometry.Rotation2d;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
@@ -257,6 +260,50 @@ public class SampleMecanumDrive extends MecanumDrive {
         setDrivePower(vel);
     }
 
+    public void driveWithController(Gamepad gamepad) {
+
+        //////////////////////////////////////////////////
+        // Controller remapping
+
+        // Get translation power
+        Vector2d dir = new Vector2d(
+                -gamepad.left_stick_y,
+                -gamepad.left_stick_x
+        );
+
+        // Get rotation power
+        float rotation_in = -gamepad.right_stick_x;
+
+        // Convert the translation power to a magnitude and angle
+        double mag = linearDeadband(dir.norm(), 0.03);
+        double ang = dir.angle();
+
+        // Apply a square curve to the translation power
+//        mag = Math.pow(mag, 2.0);
+
+
+
+        // Apply square curve to the rotation power
+        double rotation_power = Math.pow(linearDeadband(rotation_in, 0.03), 2) * Math.signum(rotation_in);
+
+        // Generate the final translation/rotation variable
+        Pose2d mechDrivePower = new Pose2d(mag * Math.cos(ang), mag * Math.sin(ang), rotation_power);
+
+        // Drive the mecanum wheels
+        setDrivePower(mechDrivePower);
+    }
+
+    private static double linearDeadband(double raw, double deadband) {
+        return Math.abs(raw) < deadband ? 0 : Math.signum(raw) * (Math.abs(raw) - deadband) / (1 - deadband);
+    }
+
+    public static double map(double x, double inMin, double inMax, double outMin, double outMax) {
+        return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+    }
+
+    public static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(value, max));
+    }
     @NonNull
     @Override
     public List<Double> getWheelPositions() {
