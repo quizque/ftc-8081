@@ -158,11 +158,11 @@ public class Grabber {
         public double pose_arm_inside = 0.95;
 
         public double pose_arm_prepare_hook = 0.45;
-        public double pose_arm_hook = 0.52;
+        public double pose_arm_hook = 0.68  ;
         public double pose_arm_floor = 0.33;
 
-        public double pose_slide_out = 0.615;
-        public double pose_slide_in = 0.45;
+        public double pose_slide_out = 0.175;
+        public double pose_slide_in = 0.0;
 
         public double arm_goal = pose_arm_inside;
         public double slide_goal = pose_slide_in;
