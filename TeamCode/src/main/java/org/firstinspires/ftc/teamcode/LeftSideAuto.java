@@ -53,9 +53,16 @@ public class LeftSideAuto extends LinearOpMode {
                 .build();
 
         TrajectorySequence traj4 = drive.trajectorySequenceBuilder(traj3.end())
-                .setConstraints(SampleMecanumDrive.getVelocityConstraint(2, 5, TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(15))
-                .forward(5)
+                .setConstraints(SampleMecanumDrive.getVelocityConstraint(5, 5, TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(15))
+                .forward(8)
                 .build();
+
+        TrajectorySequence traj5 = drive.trajectorySequenceBuilder(traj4.end())
+                .setConstraints(SampleMecanumDrive.getVelocityConstraint(5, 5, TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(15))
+                .lineToSplineHeading(new Pose2d(-47.83, -47.83, Math.toRadians(45.00)))
+                .build();
+
+
 
         drive.setPoseEstimate(trajectory0.start());
 
@@ -65,7 +72,7 @@ public class LeftSideAuto extends LinearOpMode {
         drive.followTrajectorySequenceAsync(trajectory0);
         int state = 0;
 
-        Timing.Timer timer = new Timing.Timer(5);
+        Timing.Timer timer = new Timing.Timer(2);
 
         while (opModeIsActive() && !isStopRequested()) {
 
@@ -117,6 +124,24 @@ public class LeftSideAuto extends LinearOpMode {
                     grabber.armToInside();
                     grabber.intakeStop();
                     grabber.slideToInside();
+                    timer.start();
+                }
+            } else if (state == 7) {
+                if (timer.elapsedTime() >= 1) {
+                    state++;
+                    drive.followTrajectorySequenceAsync(traj5);
+                    elevator.setHeight(4000);
+                }
+            } else if (state == 8) {
+                if (!drive.isBusy()) {
+                    state++;
+                    drive.followTrajectorySequenceAsync(traj1);
+                }
+            } else if (state == 9) {
+                if (!drive.isBusy()) {
+                    grabber.intakeOut();
+                    drive.followTrajectorySequenceAsync(traj2);
+                    state++;
                 }
             }
 
