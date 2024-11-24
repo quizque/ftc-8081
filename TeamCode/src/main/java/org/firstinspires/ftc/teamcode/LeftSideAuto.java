@@ -47,30 +47,27 @@ public class LeftSideAuto extends LinearOpMode {
 
         if (isStopRequested()) return;
         drive.followTrajectorySequenceAsync(trajectory0);
-
         int state = 0;
 
         while (opModeIsActive() && !isStopRequested()) {
 
             elevator.run();
             grabber.run();
+            drive.update();
 
-            switch (state) {
-                case 0:
-                    if (!drive.isBusy()) {
-                        state++;
+            if (state == 0) {
+                if (!drive.isBusy()) {
+                    state++;
 
-                        elevator.setHeight(4000);
-                    }
-                    break;
-                case 1:
-                    if (elevator.atTarget()) {
-                        state++;
-                        drive.followTrajectorySequenceAsync(traj1);
-                    }
-                    break;
-                case 2:
-                    break;
+                    elevator.setHeight(4000);
+                }
+            } else if (state == 1) {
+                if (elevator.atTarget()) {
+                    state++;
+                    drive.followTrajectorySequenceAsync(traj1);
+                }
+            } else if (state == 2)
+            {
             }
 
 
@@ -78,6 +75,7 @@ public class LeftSideAuto extends LinearOpMode {
             telemetry.addData("finalX", poseEstimate.getX());
             telemetry.addData("finalY", poseEstimate.getY());
             telemetry.addData("finalHeading", poseEstimate.getHeading());
+            telemetry.addData("state", state);
             telemetry.update();
 
         }
