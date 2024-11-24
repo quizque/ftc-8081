@@ -79,23 +79,31 @@ public class teleop8081 extends OpMode {
 
 
         if (gamepad1.dpad_down) {
+            Elevator.PARAMS.elevator_enable_auto_reset = true;
             elevator.setHeight(0);
         } else if (gamepad1.dpad_left) {
+            Elevator.PARAMS.elevator_enable_auto_reset = true;
             elevator.setHeight(1400);
         } else if (gamepad1.dpad_right) {
+            Elevator.PARAMS.elevator_enable_auto_reset = true;
             elevator.setHeight(2000);
         } else if (gamepad1.dpad_up) {
+            Elevator.PARAMS.elevator_enable_auto_reset = true;
             elevator.setHeight(4000);
         } else if (gamepad2.dpad_up) {
+            Elevator.PARAMS.elevator_enable_auto_reset = false;
             elevator.setHeight(2000);
             elevator.setHookOutside();
         } else if (gamepad2.dpad_right) {
+            Elevator.PARAMS.elevator_enable_auto_reset = false;
             elevator.setHeight(1800);
             elevator.setHookToAttach();
         } else if (gamepad2.dpad_left) {
+            Elevator.PARAMS.elevator_enable_auto_reset = false;
             elevator.setHeight(1600);
             grabber.slideToPercent(0.15);
         } else if (gamepad2.dpad_down) {
+            Elevator.PARAMS.elevator_enable_auto_reset = false;
             elevator.setHeight(0);
         }
 
