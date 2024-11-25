@@ -34,12 +34,12 @@ public class LeftSideAuto extends LinearOpMode {
 
         TrajectorySequence trajectory0 = drive.trajectorySequenceBuilder(new Pose2d(-39.56, -62.50, Math.toRadians(90.00)))
                 .setConstraints(SampleMecanumDrive.getVelocityConstraint(30, 30, TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(15))
-                .splineTo(new Vector2d(-47.83, -47.83), Math.toRadians(45.00))
+                .lineToSplineHeading(new Pose2d(-47.83, -47.83, Math.toRadians(45.00)))
                 .build();
 
         TrajectorySequence traj1 = drive.trajectorySequenceBuilder(trajectory0.end())
                 .setConstraints(SampleMecanumDrive.getVelocityConstraint(30, 30, TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(15))
-                .lineToConstantHeading(new Vector2d(-58.44, -59.43))
+                .lineToConstantHeading(new Vector2d(-58.0, -59.7))
                 .build();
 
         TrajectorySequence traj2 = drive.trajectorySequenceBuilder(traj1.end())
@@ -49,16 +49,16 @@ public class LeftSideAuto extends LinearOpMode {
 
         TrajectorySequence traj3 = drive.trajectorySequenceBuilder(traj2.end())
                 .setConstraints(SampleMecanumDrive.getVelocityConstraint(30, 30, TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(15))
-                .lineToSplineHeading(new Pose2d(-43.36, -51.20, Math.toRadians(135.00)))
+                .lineToSplineHeading(new Pose2d(-47.83, -52.0, Math.toRadians(90)))
                 .build();
 
         TrajectorySequence traj4 = drive.trajectorySequenceBuilder(traj3.end())
-                .setConstraints(SampleMecanumDrive.getVelocityConstraint(5, 5, TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(15))
+                .setConstraints(SampleMecanumDrive.getVelocityConstraint(3, 5, TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(15))
                 .forward(8)
                 .build();
 
         TrajectorySequence traj5 = drive.trajectorySequenceBuilder(traj4.end())
-                .setConstraints(SampleMecanumDrive.getVelocityConstraint(5, 5, TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(15))
+                .setConstraints(SampleMecanumDrive.getVelocityConstraint(30, 30, TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(15))
                 .lineToSplineHeading(new Pose2d(-47.83, -47.83, Math.toRadians(45.00)))
                 .build();
 
@@ -72,7 +72,7 @@ public class LeftSideAuto extends LinearOpMode {
         drive.followTrajectorySequenceAsync(trajectory0);
         int state = 0;
 
-        Timing.Timer timer = new Timing.Timer(2);
+        Timing.Timer timer = new Timing.Timer(1);
 
         while (opModeIsActive() && !isStopRequested()) {
 
@@ -113,7 +113,7 @@ public class LeftSideAuto extends LinearOpMode {
                 }
             } else if (state == 5) {
                 if (timer.done()) {
-                    grabber.slideToOutside();
+                    grabber.slideToPercent(0.5);
                     drive.followTrajectorySequenceAsync(traj4);
                     state++;
                     timer.start();
@@ -140,7 +140,17 @@ public class LeftSideAuto extends LinearOpMode {
             } else if (state == 9) {
                 if (!drive.isBusy()) {
                     grabber.intakeOut();
+                    timer.start();
+                    state++;
+                }
+            } else if (state == 10) {
+                if (timer.done()) {
                     drive.followTrajectorySequenceAsync(traj2);
+                }
+            } else if (state == 11) {
+                if (!drive.isBusy()) {
+                    grabber.intakeStop();
+                    elevator.setHeight(0);
                     state++;
                 }
             }
