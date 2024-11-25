@@ -19,7 +19,7 @@ import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
  * This is a simple routine to test translational drive capabilities.
  */
 @Config
-@Autonomous(group = "drive")
+@Autonomous(name = "Basic 2 part elevator")
 public class LeftSideAuto extends LinearOpMode {
     private Elevator elevator;
     private Grabber grabber;
@@ -39,7 +39,7 @@ public class LeftSideAuto extends LinearOpMode {
 
         TrajectorySequence traj1 = drive.trajectorySequenceBuilder(trajectory0.end())
                 .setConstraints(SampleMecanumDrive.getVelocityConstraint(30, 30, TRACK_WIDTH), SampleMecanumDrive.getAccelerationConstraint(15))
-                .lineToConstantHeading(new Vector2d(-58.0, -59.7))
+                .lineToConstantHeading(new Vector2d(-58.0, -59.6))
                 .build();
 
         TrajectorySequence traj2 = drive.trajectorySequenceBuilder(traj1.end())
@@ -127,7 +127,7 @@ public class LeftSideAuto extends LinearOpMode {
                     timer.start();
                 }
             } else if (state == 7) {
-                if (timer.elapsedTime() >= 1) {
+                if (timer.done()) {
                     state++;
                     drive.followTrajectorySequenceAsync(traj5);
                     elevator.setHeight(4000);
@@ -145,6 +145,7 @@ public class LeftSideAuto extends LinearOpMode {
                 }
             } else if (state == 10) {
                 if (timer.done()) {
+                    state++;
                     drive.followTrajectorySequenceAsync(traj2);
                 }
             } else if (state == 11) {
@@ -152,6 +153,11 @@ public class LeftSideAuto extends LinearOpMode {
                     grabber.intakeStop();
                     elevator.setHeight(0);
                     state++;
+                }
+            } else if (state == 12) {
+                if (elevator.atTarget(500)) {
+                    state++;
+                    drive.followTrajectorySequenceAsync(traj1);
                 }
             }
 
