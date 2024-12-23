@@ -25,7 +25,7 @@ public class Grabber {
         servo_arm_left = hardwareMap.get(ServoImplEx.class, "servoWristLeft");
         servo_arm_right = hardwareMap.get(ServoImplEx.class, "servoWristRight");
 
-        servo_intake_right = hardwareMap.get(CRServo.class, "servoIntakeLeft");
+//        servo_intake_right = hardwareMap.get(CRServo.class, "servoIntakeLeft");
         servo_intake_left = hardwareMap.get(CRServo.class, "servoIntakeRight");
 
         servo_slide_right = hardwareMap.get(ServoImplEx.class, "servoSlideRight");
@@ -35,7 +35,7 @@ public class Grabber {
 
         servo_arm_left.setDirection(Servo.Direction.REVERSE);
 
-        servo_intake_right.setDirection(DcMotorSimple.Direction.REVERSE);
+//        servo_intake_right.setDirection(DcMotorSimple.Direction.REVERSE);
 
         servo_slide_left.setDirection(Servo.Direction.REVERSE);
 
@@ -55,7 +55,7 @@ public class Grabber {
         servo_arm_left.setPosition(PARAMS.arm_goal);
         servo_arm_right.setPosition(PARAMS.arm_goal);
 
-        servo_intake_right.setPower(PARAMS.intake_power);
+//        servo_intake_right.setPower(PARAMS.intake_power);
         servo_intake_left.setPower(PARAMS.intake_power);
     }
 
@@ -128,7 +128,7 @@ public class Grabber {
         servo_arm_left.setPosition(PARAMS.arm_goal);
         servo_arm_right.setPosition(PARAMS.arm_goal);
 
-        servo_intake_right.setPower(PARAMS.intake_power);
+//        servo_intake_right.setPower(PARAMS.intake_power);
         servo_intake_left.setPower(PARAMS.intake_power);
     }
 
@@ -141,7 +141,7 @@ public class Grabber {
         packet.put("grabber_arm_left", servo_arm_left.getPosition());
         packet.put("grabber_arm_right", servo_arm_right.getPosition());
         packet.put("grabber_intake_left", servo_intake_left.getPower());
-        packet.put("grabber_intake_right", servo_intake_right.getPower());
+//        packet.put("grabber_intake_right", servo_intake_right.getPower());
     }
 
     ////////////////////////////////////////////////////////////////////////
